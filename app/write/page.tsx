@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ProfileStore } from '@/lib/profileStore';
 import { StoryStore } from '@/lib/storyStore';
 import { KizukiStore } from '@/lib/kizukiStore';
+import { ForeshadowingStore } from '@/lib/foreshadowingStore';
 import { getRandomPrompt, getNextPhase } from '@/lib/prompts';
 import Link from 'next/link';
 
@@ -35,6 +36,9 @@ export default function WritePage() {
             // Save Kizuki log
             KizukiStore.save({ content, prompt: dailyPrompt, created_at: new Date().toISOString() });
 
+            // Get pending motifs for foreshadowing continuity
+            const pendingMotifs = ForeshadowingStore.getPending();
+
             // Generate story via server-side API route (key never exposed to browser)
             setStatusMessage('物語が芽吹いています...');
             let story;
@@ -46,6 +50,7 @@ export default function WritePage() {
                         phase: updatedProfile.current_phase,
                         day: updatedProfile.current_day,
                         content,
+                        pendingMotifs,
                     }),
                 });
                 if (!res.ok) {
@@ -61,7 +66,18 @@ export default function WritePage() {
                     summary_for_next: '生成失敗',
                     mood_tags: ['Error'],
                     character: 'haru' as const,
+                    motifs: [],
+                    new_foreshadowing: null,
+                    resolved_foreshadowing_id: null,
                 };
+            }
+
+            // Handle foreshadowing: resolve + plant new
+            if (story.resolved_foreshadowing_id) {
+                ForeshadowingStore.resolve(story.resolved_foreshadowing_id);
+            }
+            if (story.new_foreshadowing) {
+                ForeshadowingStore.addMotif(story.new_foreshadowing);
             }
 
             // Save story

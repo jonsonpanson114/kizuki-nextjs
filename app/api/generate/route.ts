@@ -1,5 +1,5 @@
 // app/api/generate/route.ts
-// Server-side Gemini API proxy. The key NEVER leaves the server.
+// Server-side Gemini API proxy — key never reaches the browser.
 
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -26,31 +26,49 @@ const getSystemPrompt = (phase: number) => `あなたは「伊坂幸太郎」の
 - **花 (Phase 4)**: 全ての伏線が回収されるカタルシス。
 
 # 執筆ルール
-1. ユーザーの「気づき」を物語の核にするが、そのまま文章には出さない。
+1. ユーザーの「気づき」を物語の核にするが、そのまま文章には出さない。天気・BGM・通りすがりの言葉として背景に溶け込ませる。
 2. 説教禁止。読者に委ねる。
-3. オチをつけすぎない。余韻で終わる。
+3. オチをつけすぎない。「...かもしれない」という余韻で終わる。
+4. 伏線（motifs）がある場合は必ず物語に織り込み、可能なら回収する。
 
 # 出力形式
 必ず正当なJSON形式で出力すること。Markdownのコードブロックは不要。`;
 
-function buildPrompt(phase: number, day: number, content: string): string {
+function buildPrompt(
+    phase: number,
+    day: number,
+    content: string,
+    pendingMotifs: { id: string; motif: string }[]
+): string {
     const phaseName = ['', '土', '根', '芽', '花'][phase] || '土';
+    const motifSection = pendingMotifs.length > 0
+        ? pendingMotifs.map(m => `- ${m.motif} (ID: ${m.id})`).join('\n')
+        : 'なし';
+
     return `現在: ${phaseName}フェーズ (Phase ${phase}), Day ${day}
 
 ユーザーの今日の気づき:
 "${content}"
 
+未回収の伏線（必ず物語に織り込んでください）:
+${motifSection}
+
 指示:
 - 400〜800文字の短編エピソードを日本語で書いてください
-- ユーザーの「気づき」を間接的に織り込んでください
+- ユーザーの「気づき」を間接的に織り込んでください（天気・BGM・背景の出来事として）
 - Phase ${phase}のルールに従い、適切なキャラクターを使ってください
+- 未回収の伏線がある場合、それを物語の鍵として登場させ、可能なら回収してください
+- 新しい伏線を仕込む場合は3〜5エピソードに1回程度にしてください
 
 以下のJSON形式のみで出力してください:
 {
   "story_text": "物語本文",
   "summary_for_next": "次回への引き継ぎ要約（100文字以内）",
   "mood_tags": ["タグ1", "タグ2"],
-  "character": "haru" または "sora"
+  "character": "haru" または "sora",
+  "motifs": ["このエピソードに登場したモチーフ（雨、猫、珈琲など）"],
+  "new_foreshadowing": null または "新しい伏線モチーフの文字列",
+  "resolved_foreshadowing_id": null または "今回回収した伏線のID文字列"
 }`;
 }
 
@@ -59,7 +77,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'API Key not configured on server' }, { status: 500 });
     }
 
-    const { phase, day, content } = await req.json();
+    const { phase, day, content, pendingMotifs = [] } = await req.json();
 
     const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
@@ -68,7 +86,7 @@ export async function POST(req: NextRequest) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 system_instruction: { parts: [{ text: getSystemPrompt(phase) }] },
-                contents: [{ role: 'user', parts: [{ text: buildPrompt(phase, day, content) }] }],
+                contents: [{ role: 'user', parts: [{ text: buildPrompt(phase, day, content, pendingMotifs) }] }],
                 generationConfig: {
                     temperature: 0.9,
                     maxOutputTokens: 2048,
@@ -80,7 +98,10 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
         const errText = await response.text();
-        return NextResponse.json({ error: `Gemini API Error (${response.status}): ${errText}` }, { status: response.status });
+        return NextResponse.json(
+            { error: `Gemini API Error (${response.status}): ${errText}` },
+            { status: response.status }
+        );
     }
 
     const data = await response.json();
