@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-washi: #F5F5F0;
+  --color-sumi: #2D2D2D;
+  --color-stone: #8E8E93;
+  --font-serif: 'Noto Serif JP', Georgia, serif;
+  --font-sans: 'Noto Sans JP', system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+}
