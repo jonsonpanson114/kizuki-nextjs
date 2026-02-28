@@ -128,10 +128,22 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
     let text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+
+    if (!text) {
+        console.error('Gemini returned empty text. Full response:', JSON.stringify(data));
+        return NextResponse.json({ error: 'AIからの応答が空でした。もう一度お試しください。' }, { status: 502 });
+    }
+
     text = text.replace(/```json\n?|```/g, '').trim();
     const first = text.indexOf('{');
     const last = text.lastIndexOf('}');
     if (first !== -1 && last !== -1) text = text.substring(first, last + 1);
 
-    return NextResponse.json(JSON.parse(text));
+    try {
+        const parsed = JSON.parse(text);
+        return NextResponse.json(parsed);
+    } catch (e) {
+        console.error('JSON parse failed. Raw text was:', text);
+        return NextResponse.json({ error: `JSON解析に失敗しました。AIの出力が不正な形式でした。` }, { status: 502 });
+    }
 }

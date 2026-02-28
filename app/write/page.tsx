@@ -59,10 +59,13 @@ export default function WritePage() {
                     }),
                 });
                 if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error ?? `HTTPエラー: ${res.status}`);
+                    const errText = await res.text().catch(() => '');
+                    let errMsg = `HTTPエラー: ${res.status}`;
+                    try { errMsg = JSON.parse(errText).error ?? errMsg; } catch { errMsg = errText || errMsg; }
+                    throw new Error(errMsg);
                 }
-                story = await res.json();
+                const rawText = await res.text();
+                story = JSON.parse(rawText);
             } catch (e) {
                 const msg = e instanceof Error ? e.message : String(e);
                 console.error('AI generation failed:', msg);
