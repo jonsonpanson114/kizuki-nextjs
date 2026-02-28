@@ -39,6 +39,10 @@ export default function WritePage() {
             // Get pending motifs for foreshadowing continuity
             const pendingMotifs = ForeshadowingStore.getPending();
 
+            // Get previous story summary for narrative continuity
+            const allStories = StoryStore.getAll();
+            const prevSummary = allStories.length > 0 ? allStories[0].summary : '';
+
             // Generate story via server-side API route (key never exposed to browser)
             setStatusMessage('物語が芽吹いています...');
             let story;
@@ -51,6 +55,7 @@ export default function WritePage() {
                         day: updatedProfile.current_day,
                         content,
                         pendingMotifs,
+                        prevSummary,
                     }),
                 });
                 if (!res.ok) {
