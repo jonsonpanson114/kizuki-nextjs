@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { generateReply } from '@/lib/gemini';
 
 type Character = 'haru' | 'sora';
 
@@ -26,7 +25,6 @@ export default function DialoguePage() {
     const [input, setInput] = useState('');
     const [isSending, setIsSending] = useState(false);
 
-    // Initial greeting
     useEffect(() => {
         const greeting: Message = {
             role: 'model',
@@ -40,19 +38,24 @@ export default function DialoguePage() {
     const sendMessage = async () => {
         if (!input.trim() || isSending) return;
         const userMsg: Message = { role: 'user', text: input };
-        const newHistory = [...messages, userMsg];
-        setMessages(newHistory);
+        setMessages(prev => [...prev, userMsg]);
         setInput('');
         setIsSending(true);
 
         try {
-            const reply = await generateReply(
-                charId as Character,
-                messages.map(m => ({ role: m.role, text: m.text })),
-                input
-            );
-            setMessages(prev => [...prev, { role: 'model', text: reply }]);
-        } catch (e) {
+            // Call server-side API route — key never leaves the server
+            const res = await fetch('/api/dialogue', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    character: charId,
+                    history: messages.map(m => ({ role: m.role, text: m.text })),
+                    message: input,
+                }),
+            });
+            const data = await res.json();
+            setMessages(prev => [...prev, { role: 'model', text: data.reply ?? '...' }]);
+        } catch {
             setMessages(prev => [...prev, { role: 'model', text: '...（言葉を探しているようだ）' }]);
         } finally {
             setIsSending(false);
@@ -72,8 +75,8 @@ export default function DialoguePage() {
                 {messages.map((msg, i) => (
                     <div key={i} className={`max-w-[85%] ${msg.role === 'user' ? 'self-end' : 'self-start'}`}>
                         <div className={`px-4 py-3 font-serif text-sm leading-relaxed ${msg.role === 'user'
-                                ? 'bg-sumi text-washi'
-                                : `bg-white/70 border ${char.border} ${char.color}`
+                            ? 'bg-sumi text-washi'
+                            : `bg-white/70 border ${char.border} ${char.color}`
                             }`}>
                             {msg.text}
                         </div>

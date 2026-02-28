@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { ProfileStore } from '@/lib/profileStore';
 import { StoryStore } from '@/lib/storyStore';
 import { KizukiStore } from '@/lib/kizukiStore';
-import { generateStory } from '@/lib/gemini';
 import { getRandomPrompt, getNextPhase } from '@/lib/prompts';
 import Link from 'next/link';
 
@@ -36,15 +35,27 @@ export default function WritePage() {
             // Save Kizuki log
             KizukiStore.save({ content, prompt: dailyPrompt, created_at: new Date().toISOString() });
 
-            // Generate story
+            // Generate story via server-side API route (key never exposed to browser)
             setStatusMessage('物語が芽吹いています...');
             let story;
             try {
-                story = await generateStory(updatedProfile.current_phase, updatedProfile.current_day, content);
+                const res = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phase: updatedProfile.current_phase,
+                        day: updatedProfile.current_day,
+                        content,
+                    }),
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error ?? `HTTPエラー: ${res.status}`);
+                }
+                story = await res.json();
             } catch (e) {
                 const msg = e instanceof Error ? e.message : String(e);
                 console.error('AI generation failed:', msg);
-                // Fallback mock
                 story = {
                     story_text: `（AI生成に失敗しました: ${msg}）\n\n「${content}」\n\nその言葉が、ふと風に乗って聞こえた気がした。ハルは珈琲を飲みながら、「また変なのが聞こえたな」と呟く。世界は相変わらず、少しだけズレているようだ。`,
                     summary_for_next: '生成失敗',
