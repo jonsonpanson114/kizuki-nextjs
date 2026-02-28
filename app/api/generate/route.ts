@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
                 contents: [{ role: 'user', parts: [{ text: buildPrompt(phase, day, content, pendingMotifs, prevSummary) }] }],
                 generationConfig: {
                     temperature: 1.0,
-                    maxOutputTokens: 2048,
+                    maxOutputTokens: 4096,
                     responseMimeType: 'application/json',
                 },
             }),
