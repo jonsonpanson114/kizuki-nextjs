@@ -109,7 +109,7 @@ export function GardenView() {
         {/* 花 */}
         {garden.flowers.map((flower: any) => {
           const sizeMap = { small: 6, medium: 10, large: 14 };
-          const radius = sizeMap[flower.size];
+          const radius = sizeMap[flower.size as 'small' | 'medium' | 'large'];
 
           return (
             <g key={flower.id}>
