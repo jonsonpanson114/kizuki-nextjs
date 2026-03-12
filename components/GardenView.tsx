@@ -31,7 +31,7 @@ export function GardenView() {
       autumn: { bg: '#F5E6D3', accent: '#FFB347' },
       winter: { bg: '#E8ECF0', accent: '#A5D8DD' },
     };
-    return colorMap[garden.season];
+    return colorMap[garden.season as GardenState['season']];
   };
 
   const colors = getGardenColors();
@@ -54,7 +54,7 @@ export function GardenView() {
       {/* 季節・時間表示 */}
       <div className="absolute top-2 left-4 bg-white/70 px-3 py-1.5 rounded-full">
         <span className="text-sm font-serif text-[#2D2D2D]">
-          {seasonNames[garden.season]}・{timeNames[garden.time_of_day]}
+          {seasonNames[garden.season as GardenState['season']]}・{timeNames[garden.time_of_day as GardenState['time_of_day']]}
         </span>
       </div>
 
