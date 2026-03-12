@@ -200,7 +200,7 @@ export async function generateStory(
                 system_instruction: { parts: [{ text: getSystemPrompt(phase) }] },
                 contents: [{ role: 'user', parts: [{ text: buildUserPrompt(phase, day, kizukiContent, prevSummary) }] }],
                 generationConfig: {
-                    temperature: 0.9,
+                    temperature: 0.7,
                     maxOutputTokens: 2048,
                     responseMimeType: 'application/json',
                 },
