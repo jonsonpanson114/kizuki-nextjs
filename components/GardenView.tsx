@@ -83,7 +83,7 @@ export function GardenView() {
         <path d="M0 130 L80 80 L160 120 L240 70 L320 110 L400 90 L400 150 L0 150 Z" fill="#C9C0A8" opacity="0.5" />
 
         {/* 木 */}
-        {garden.trees.map((tree) => {
+        {garden.trees.map((tree: any) => {
           const trunkHeight = tree.growth_stage === 'mature' ? 80 : tree.growth_stage === 'young' ? 60 : 40;
           const crownRadius = tree.growth_stage === 'mature' ? 50 : tree.growth_stage === 'young' ? 35 : 20;
           const trunkX = tree.position.x;
@@ -107,7 +107,7 @@ export function GardenView() {
         })}
 
         {/* 花 */}
-        {garden.flowers.map((flower) => {
+        {garden.flowers.map((flower: any) => {
           const sizeMap = { small: 6, medium: 10, large: 14 };
           const radius = sizeMap[flower.size];
 
