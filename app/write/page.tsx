@@ -17,7 +17,7 @@ export default function WritePage() {
     const [statusMessage, setStatusMessage] = useState('');
     const [error, setError] = useState('');
 
-    const dailyPrompt = useMemo(() => getRandomPrompt(profile.current_phase), [profile.current_phase]);
+    const dailyPrompt = useMemo(() => getRandomPrompt(profile.current_phase, profile.current_day), [profile.current_phase, profile.current_day]);
 
     const handleSubmit = async () => {
         if (!content.trim()) return;
