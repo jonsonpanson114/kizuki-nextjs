@@ -7,6 +7,9 @@ export interface GardenState {
   season: 'spring' | 'summer' | 'autumn' | 'winter';
   time_of_day: 'morning' | 'afternoon' | 'evening' | 'night';
   last_updated: string;
+  growGarden: (storyCount: number) => void;
+  updateSeason: () => void;
+  updateTimeOfDay: () => void;
 }
 
 export interface GardenFlower {
